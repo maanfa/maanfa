@@ -1,0 +1,24 @@
+{
+  "name": "maanfa",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maanfa/maanfa.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build:core": "tsx ./scripts/build-core.ts"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.24.0",
+    "oxlint": "^1.39.0",
+    "oxlint-tsgolint": "^0.11.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.10.0 || ^24.12.0"
+  },
+  "packageManager": "pnpm@10.26.2"
+}

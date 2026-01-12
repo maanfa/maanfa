@@ -1,0 +1,13 @@
+{
+  "name": "@maanfa/tsconfig",
+  "version": "0.0.1",
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "5.x"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

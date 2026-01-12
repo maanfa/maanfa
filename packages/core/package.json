@@ -1,0 +1,9 @@
+{
+  "name": "@maanfa/core",
+  "version": "0.0.1",
+  "type": "module",
+  "devDependencies": {
+    "@maanfa/types": "workspace:*",
+    "@maanfa/tsconfig": "workspace:*"
+  }
+}

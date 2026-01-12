@@ -1,0 +1,18 @@
+{
+  "oxc.enable": true,
+  "oxc.lint.run": "onSave",
+  "oxc.requireConfig": true,
+  "oxc.typeAware": true,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  // For Stupid VSCode DefaultSettings
+  "workbench.tree.indent": 16,
+  "workbench.tree.renderIndentGuides": "always",
+  "workbench.colorCustomizations": {
+    "tree.indentGuidesStroke": "#52b7ff"
+  }
+}

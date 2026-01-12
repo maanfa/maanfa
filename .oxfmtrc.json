@@ -1,0 +1,10 @@
+{
+  "endOfLine": "lf",
+  "semi": false,
+  "singleQuote": true,
+  "experimentalSortPackageJson": true,
+  "trailingComma": "all",
+  "experimentalSortImports": null,
+  "insertFinalNewline": true,
+  "singleAttributePerLine": true
+}

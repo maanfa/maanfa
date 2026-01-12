@@ -1,0 +1,3 @@
+{
+  "extends": "@maanfa/tsconfig/tsconfig.base.json"
+}

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": [
+      "dom",
+      "esnext",
+      "webworker"
+    ],
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+  }
+}
