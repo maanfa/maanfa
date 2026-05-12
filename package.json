@@ -11,14 +11,15 @@
     "build:core": "tsx ./scripts/build-core.ts"
   },
   "devDependencies": {
-    "oxfmt": "^0.24.0",
-    "oxlint": "^1.39.0",
-    "oxlint-tsgolint": "^0.11.0",
+    "oxfmt": "^0.48.0",
+    "oxlint": "^1.63.0",
+    "oxlint-tsgolint": "^0.22.1",
+    "tsdown": "0.21.7",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "engines": {
-    "node": "^20.19.0 || ^22.10.0 || ^24.12.0"
+    "node": "^22.10.0 || ^24.12.0"
   },
   "packageManager": "pnpm@10.26.2"
 }

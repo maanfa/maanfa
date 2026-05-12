@@ -1,0 +1,20 @@
+{
+  "name": "@maanfa/quantized-mesh",
+  "version": "0.0.1",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsdown",
+    "build-watch": "tsdown --watch"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "eventemitter3": "^5.0.1"
+  },
+  "devDependencies": {
+    "@maanfa/tsconfig": "workspace:*"
+  }
+}

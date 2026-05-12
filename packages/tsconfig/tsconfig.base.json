@@ -5,8 +5,10 @@
     "lib": [
       "esnext",
     ],
-    "moduleResolution": "node",
+    "strict": true,
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
+    "skipLibCheck": true
   }
 }
