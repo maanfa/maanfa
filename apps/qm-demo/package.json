@@ -1,0 +1,26 @@
+{
+  "name": "qm-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@maanfa/quantized-mesh": "workspace:*",
+    "naive-ui": "^2.41.0",
+    "three": "^0.184.0",
+    "vue": "^3.5.34"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/three": "^0.184.1",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/tsconfig": "^0.9.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.10",
+    "vue-tsc": "^3.2.8"
+  }
+}
