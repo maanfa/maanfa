@@ -1,0 +1,19 @@
+{
+  "extends": "@maanfa/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedDeclarations": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "#/*": [
+        "./*"
+      ],
+      "@maanfa/quantized-mesh/*": [
+        "./src/*"
+      ]
+    }
+  }
+}
