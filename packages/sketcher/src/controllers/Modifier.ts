@@ -97,7 +97,7 @@ class Modifier implements IController, InteractionHandler {
       this.rendererManager,
       renderer,
       new EditVertexHelper(this.rendererManager.edit, (p) =>
-        SceneTransforms.wgs84ToWindowCoordinates(this.viewer.scene, p, new Cartesian2()) ?? undefined,
+        SceneTransforms.worldToWindowCoordinates(this.viewer.scene, p, new Cartesian2()) ?? undefined,
       ),
       this.resolveStyle,
     )

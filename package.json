@@ -1,12 +1,12 @@
 {
   "name": "maanfa",
   "version": "0.0.1",
+  "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/maanfa/maanfa.git"
   },
-  "main": "index.js",
   "scripts": {
     "build:core": "tsx ./scripts/build-core.ts",
     "test": "vitest run",
@@ -16,12 +16,12 @@
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.16",
-    "oxfmt": "^0.48.0",
-    "oxlint": "^1.63.0",
-    "oxlint-tsgolint": "^0.22.1",
-    "tsdown": "0.21.7",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.2",
+    "oxfmt": "^0.62.0",
+    "oxlint": "^1.77.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "tsdown": "^0.22.14",
+    "tsx": "^4.23.11",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
   "engines": {
