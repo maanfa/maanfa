@@ -124,7 +124,7 @@ describe('DrawPolygonStrategy', () => {
     expect(ctx.renderPreview).not.toHaveBeenCalled()
   })
 
-  it('recreates the draft element on every mouseMove (destroy & rebuild)', () => {
+  it('reuses the draft element while refreshing primitive geometry', () => {
     queuePicks(deg(0, 0), deg(10, 0), deg(10, 10), deg(20, 20), deg(30, 30))
     const ctx = context()
     const s = strategyWith(ctx)
@@ -140,7 +140,7 @@ describe('DrawPolygonStrategy', () => {
     expect(renderDraftElement).toHaveBeenCalledTimes(2)
     const first = renderDraftElement.mock.calls[0]![0] as Polygon
     const second = renderDraftElement.mock.calls[1]![0] as Polygon
-    expect(first).not.toBe(second)
+    expect(first).toBe(second)
     expect(first.getVertexCount()).toBe(4)
     expect(second.getVertexCount()).toBe(4)
     expect(Cartesian3.equals(second.getVertex(3), deg(30, 30))).toBe(true)

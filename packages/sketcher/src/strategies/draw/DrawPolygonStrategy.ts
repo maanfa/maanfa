@@ -13,7 +13,7 @@ import { checkSelfIntersection } from '../../utils/intersection'
  * 面绘制策略 — 多点连续落点构成封闭多边形。
  *
  * 渲染自驱：
- * - 已放置 ≥ 3 点 → `renderDraftElement(Polygon(placed + cursor))`（真身草稿，含游标实时刷新，每次销毁重建）
+ * - 已放置 ≥ 3 点 → `renderDraftElement(Polygon(placed + cursor))`（真身草稿，复用元素；primitive 由 renderer 刷新）
  * - 已放置 < 3 点 → `renderPreview`（活动边 + 临时闭合）
  * - 已放置顶点 + 边长（polygon 含闭合边） → `vertexHelpers.sync`
  */
@@ -106,10 +106,16 @@ class DrawPolygonStrategy implements IDrawStrategy {
     const type: ElementType = 'polygon'
 
     // 1) 真身草稿：已放置 ≥ 3 时经元素适配器渲染；
-    //    含游标时草稿 = 已放置 + 游标（mousemove 实时刷新整面），每次销毁重建
+    //    含游标时草稿 = 已放置 + 游标（mousemove 实时刷新整面）。
     if (this.placed.length >= 3) {
       const draftCoords = this.cursor ? [...this.placed, this.cursor] : this.placed
-      this.draft = new Polygon(DRAFT_ELEMENT_ID, draftCoords)
+      if (!this.draft || this.draft.getVertexCount() !== draftCoords.length) {
+        this.draft = new Polygon(DRAFT_ELEMENT_ID, draftCoords)
+      } else {
+        draftCoords.forEach((coord, index) => {
+          this.draft!.setVertex(index, coord)
+        })
+      }
       this.context.renderDraftElement(this.draft, this.context.style)
     } else {
       this.context.clearDraftElement()
