@@ -5,7 +5,8 @@
   "oxc.typeAware": true,
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnSaveMode": "file",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
   "[typescript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },

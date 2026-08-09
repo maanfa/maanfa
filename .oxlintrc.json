@@ -1,9 +1,21 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "oxc"],
+  "plugins": [
+    "typescript",
+    "oxc",
+    "import"
+  ],
   "env": {
     "builtin": true
   },
   "globals": {},
-  "ignorePatterns": []
+  "ignorePatterns": [
+    "**/dist",
+    "**/node_modules"
+  ],
+  "rules": {
+    "import/consistent-type-specifier-style": "warn",
+    "import/default": "error",
+    "typescript/unbound-method": "off",
+  }
 }
