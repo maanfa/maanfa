@@ -2,5 +2,8 @@
   "name": "@maanfa/types",
   "version": "0.0.1",
   "type": "module",
-  "types": "index.d.ts"
+  "types": "index.d.ts",
+  "peerDependencies": {
+    "cesium": ">=1.104.0"
+  }
 }
