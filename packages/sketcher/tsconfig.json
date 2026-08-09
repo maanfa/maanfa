@@ -1,0 +1,25 @@
+{
+  "extends": "@maanfa/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "declaration": true,
+    "declarationMap": true,
+    // True - use oxc-transform to generate isolated .d.ts files
+    "isolatedDeclarations": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "#/*": [
+        "./*"
+      ],
+      "@maanfa/sketcher/*": [
+        "./src/*"
+      ]
+    }
+  }
+}

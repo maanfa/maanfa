@@ -1,0 +1,25 @@
+{
+  "name": "@maanfa/sketcher",
+  "version": "0.0.1",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsdown",
+    "build-watch": "tsdown --watch",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "cesium": ">=1.104.0"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "@maanfa/tsconfig": "workspace:*",
+    "@maanfa/types": "workspace:*"
+  },
+  "dependencies": {
+    "eventemitter3": "^5.0.1"
+  }
+}
