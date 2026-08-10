@@ -1,6 +1,7 @@
 import { Cartesian2, Cartesian3 } from 'cesium'
 import type Element from '../../element/Element'
 import type { EditMotion, HandleId, IAuxHandle, InteractionFlags } from './types'
+import surfaceMidpoint from '../../utils/surfaceMidpoint'
 
 /**
  * 中点辅助元素（通用）：
@@ -40,7 +41,12 @@ class MidpointElement implements IAuxHandle {
     const n = element.getVertexCount()
     const a = element.getVertex(this.index)
     const b = element.getVertex((this.index + 1) % n)
-    this._position = Cartesian3.midpoint(a, b, new Cartesian3())
+    this._position = surfaceMidpoint(a, b)
+  }
+
+  /** 设置仅用于渲染/命中的辅助位置，不修改 Element 真值。 */
+  setPosition(position: Cartesian3): void {
+    this._position = Cartesian3.clone(position)
   }
 
   detach(): void {}

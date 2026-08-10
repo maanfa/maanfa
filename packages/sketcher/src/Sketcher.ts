@@ -1,15 +1,17 @@
-import type { Viewer } from 'cesium'
+import type { PickResult, Viewer } from 'cesium'
 import EventEmitter from 'eventemitter3'
 import { StateMachine } from './state'
+import type { Mode } from './state/types'
 import { MouseEventManager, HotkeyManager, CursorManager } from './interaction'
 import { ElementStore } from './store'
 import type { IElementStore } from './store'
 import { FeedbackStyleStack, RendererManager } from './renderer'
 import type { IRendererManager } from './renderer'
-import { Drawer, Modifier, HoverManager, Picker } from './controllers'
+import { Drawer, Modifier, HoverManager, Picker, InteractionArbiter } from './controllers'
+import type { InteractionPolicy } from './controllers'
 import type { Element } from './element'
 import type { DrawOption } from './types'
-import type { ElementStyles } from './styles'
+import type { ElementStyle, ElementStyles } from './styles'
 import type {
   DrawFinishEvent,
   ElementUpdateEvent,
@@ -19,6 +21,29 @@ import type {
 import createLogger from './utils/logger'
 import type { InteractionHandler } from './interaction/MouseEventManager'
 import type { Modifier as ModifierType } from './controllers'
+
+/**
+ * 合成编辑反馈：继承 hover 的尺寸/形态变化，但使用基础样式颜色，避免编辑态继续闪烁高亮。
+ */
+function resolveEditingStyle(element: Element): ElementStyle {
+  const base = element.style
+  const hover = element.hoverStyle
+  if (!hover) return element.editingStyle ?? base ?? {}
+
+  return {
+    line: hover.line
+      ? { ...hover.line, color: base?.line?.color ?? hover.line.color, opacity: base?.line?.opacity ?? hover.line.opacity }
+      : base?.line,
+    fill: hover.fill
+      ? { ...hover.fill, color: base?.fill?.color ?? hover.fill.color, opacity: base?.fill?.opacity ?? hover.fill.opacity }
+      : base?.fill,
+    symbol: hover.symbol ?? base?.symbol,
+    label: hover.label
+      ? { ...hover.label, color: base?.label?.color ?? hover.label.color, opacity: base?.label?.opacity ?? hover.label.opacity }
+      : base?.label,
+    customShaders: hover.customShaders ?? base?.customShaders,
+  }
+}
 
 /**
  * Sketcher 对外事件映射。
@@ -97,6 +122,10 @@ class Sketcher extends EventEmitter<SketcherEvents> {
   private _selectedId: string | null = null
   private _hoveredId: string | null = null
   private _cursorOverride: string | null = null
+  /** 跨控制器交互开关；编辑与绘制互斥规则不在此配置。 */
+  readonly interaction: InteractionPolicy
+  /** 行为仲裁器，负责把拾取意图转换为编辑/退出等模式操作。 */
+  readonly interactionArbiter: InteractionArbiter
   readonly viewer: Viewer
 
   constructor(
@@ -105,6 +134,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
       elementStore?: IElementStore
       rendererManager?: IRendererManager
       styles?: ElementStyles
+      interaction?: Partial<InteractionPolicy>
     },
   ) {
     super()
@@ -115,11 +145,32 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
     this.viewer = viewer
     this.globalStyles = opts?.styles ?? {}
+    this.interaction = {
+      enableAutoEdit: opts?.interaction?.enableAutoEdit ?? true,
+      enablePickToEdit: opts?.interaction?.enablePickToEdit ?? false,
+      enableBlankClickExitEdit: opts?.interaction?.enableBlankClickExitEdit ?? true,
+    }
 
     // 注入可替换实现
     this.elementStore = opts?.elementStore ?? new ElementStore()
     this.rendererManager = opts?.rendererManager ?? new RendererManager(viewer)
     this.modifier = new Modifier(viewer)
+    const getMode = (): Mode => this.stateMachine.mode
+    const getEditingElement = (): Element | null => this.modifier.editingElement
+    this.interactionArbiter = new InteractionArbiter(
+      {
+        get mode() {
+          return getMode()
+        },
+        get editingElement() {
+          return getEditingElement()
+        },
+        resolvePickedElement: (picks) => this.resolvePickedElement(picks),
+        enterEdit: (element) => this.enterEdit(element),
+        exitEdit: () => this.exitEdit(),
+      },
+      this.interaction,
+    )
 
     this.wireComponents()
     this.bindInternalEvents()
@@ -171,6 +222,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
     drawCtrl.elementStore = this.elementStore
     drawCtrl.viewer = this.viewer
     drawCtrl.cursorManager = this.cursorManager
+    drawCtrl.defaultAutoEdit = this.interaction.enableAutoEdit
     drawCtrl.onDrawFinish = (element, autoEdit) => {
       this.emit('draw-finish', { element })
       this.emit('element-added', { element })
@@ -203,6 +255,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
     pickerCtrl.onPickResult = (evt) => {
       this.emit('pick-result', evt)
       this.logger.debug('[Sketcher] pick result:', evt.picks.length)
+      this.interactionArbiter.handlePick(evt.picks)
     }
     pickerCtrl.viewer = this.viewer
 
@@ -236,7 +289,20 @@ class Sketcher extends EventEmitter<SketcherEvents> {
     })
 
     // 模式切换 → 配置 MouseEventManager 优先级链
-    this.stateMachine.on('mode-change', ({ nextMode }) => {
+    this.stateMachine.on('mode-change', ({ prevMode, nextMode, prevSub, nextSub }) => {
+      // 状态机只保存状态；控制器负责释放各自的临时资源。
+      if (prevMode === 'draw') this.drawer.onModeExit(prevMode, prevSub as never)
+      if (prevMode === 'edit') this.modifier.onModeExit(prevMode, prevSub as never)
+      if (prevMode === 'idle' || prevMode === 'edit') {
+        this.hoverManager.onModeExit(prevMode, prevSub as never)
+      }
+
+      if (nextMode === 'draw') this.drawer.onModeEnter(nextMode, nextSub as never)
+      if (nextMode === 'edit') this.modifier.onModeEnter(nextMode, nextSub as never)
+      if (nextMode === 'idle' || nextMode === 'edit') {
+        this.hoverManager.onModeEnter(nextMode, nextSub as never)
+      }
+
       this.configureRouter(nextMode)
       this.emit('mode-change', {
         prevMode: '',
@@ -251,6 +317,15 @@ class Sketcher extends EventEmitter<SketcherEvents> {
       const mode = this.stateMachine.mode
       if (mode === 'draw') {
         this.drawer.exitDraw()
+      } else if (mode === 'edit') {
+        const sub = this.stateMachine.editSubState as string
+        if (sub === 'dragging' || sub === 'inserting') {
+          this.modifier.cancelCurrentDrag()
+        } else {
+          this.clearEditingFeedback()
+          // StateMachine 只负责模式值变更，显式释放 Modifier 的辅助上下文。
+          this.modifier.exitEdit()
+        }
       }
     })
   }
@@ -272,7 +347,8 @@ class Sketcher extends EventEmitter<SketcherEvents> {
         this.mouseEventManager.configure([drawCtrl])
         break
       case 'edit':
-        this.mouseEventManager.configure([editCtrl, pickerCtrl, hoverCtrl])
+        // 编辑态只允许编辑辅助元素命中；元素级 hover 在编辑期间不参与反馈。
+        this.mouseEventManager.configure([editCtrl, pickerCtrl])
         break
     }
   }
@@ -284,6 +360,8 @@ class Sketcher extends EventEmitter<SketcherEvents> {
   /** 进入绘图模式 */
   enterDraw(opt: DrawOption): void {
     this.logger.debug('[Sketcher] enterDraw:', opt.type)
+    this.interactionArbiter.beforeEnterDraw()
+    this.drawer.defaultAutoEdit = this.interaction.enableAutoEdit
     this.drawer.enterDraw(opt)
 
     const mode = this.stateMachine.mode
@@ -303,24 +381,49 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
   // #region 公开 API — 编辑
 
-  /** 进入编辑模式 */
-  enterEdit(element: Element): void {
+  /**
+   * 进入编辑模式。
+   *
+   * 可传入已加入 `ElementStore` 的实例或元素 id，静态数据无需经过绘制流程即可编辑。
+   * @returns 是否成功进入编辑（元素不存在或没有对应渲染器时返回 `false`）
+   */
+  enterEdit(target: Element | string): boolean {
+    const element = typeof target === 'string' ? this.elementStore.get(target) : this.elementStore.get(target.id)
+    if (!element) {
+      this.logger.debug('[Sketcher] enterEdit: element not found', target)
+      return false
+    }
+
+    // 清除进入编辑前遗留的元素悬停状态，并同步 HoverManager 的内部命中缓存。
+    this.hoverManager.unhover()
+
+    const current = this.modifier.editingElement
+    if (current && current.id !== element.id) {
+      this.clearEditingFeedback()
+      this.modifier.exitEdit()
+    }
+
     this.logger.debug('[Sketcher] enterEdit:', element.id)
-    this.modifier.enterEdit(element)
-    this.feedback.apply(element.id, element.editingStyle ?? this.globalStyles.editingStyle, 'edit')
+    if (!this.modifier.enterEdit(element)) return false
+    this.feedback.apply(element.id, element.editingStyle ?? this.globalStyles.editingStyle ?? resolveEditingStyle(element), 'edit')
     this.rendererManager.render(element, this.feedback.effective(element.style, element.id))
     this.configureRouter('edit')
+    return true
   }
 
   /** 退出编辑模式 */
   exitEdit(): void {
     this.logger.debug('[Sketcher] exitEdit')
-    const editing = this.modifier.editingElement
-    if (editing) {
-      this.feedback.clear(editing.id, 'edit')
-      this.rendererManager.render(editing, this.feedback.effective(editing.style, editing.id))
-    }
+    this.clearEditingFeedback()
     this.modifier.exitEdit()
+  }
+
+  /** 清理当前编辑元素的反馈样式并恢复基础渲染。 */
+  private clearEditingFeedback(): void {
+    const editing = this.modifier.editingElement
+    if (!editing) return
+    this.feedback.clear(editing.id, 'edit')
+    this.rendererManager.render(editing, this.feedback.effective(editing.style, editing.id))
   }
 
   // #endregion
@@ -329,6 +432,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
   /** 主动悬停指定元素（与 UI 联动） */
   hover(id: string): void {
+    if (this.stateMachine.mode === 'edit') return
     this.hoverManager.hover(id)
   }
 
@@ -347,7 +451,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
     const element = this.elementStore.get(id)
     if (element) {
-      this.feedback.apply(id, element.selectedStyle ?? this.globalStyles.selectedStyle, 'select')
+      this.feedback.apply(id, element.selectedStyle ?? this.globalStyles.selectedStyle ?? element.style ?? {}, 'select')
       this.rendererManager.render(element, this.feedback.effective(element.style, id))
     }
     this._selectedId = id
@@ -365,6 +469,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
   /** 应用悬停反馈（含清除上一个悬停元素的反馈并重渲染）。 */
   private applyHover(id: string | null): void {
+    if (id && this.stateMachine.mode === 'edit') return
     if (this._hoveredId && this._hoveredId !== id) {
       const prev = this.elementStore.get(this._hoveredId)
       if (prev) {
@@ -379,6 +484,19 @@ class Sketcher extends EventEmitter<SketcherEvents> {
     if (!element) return
     this.feedback.apply(id, element.hoverStyle, 'hover')
     this.rendererManager.render(element, this.feedback.effective(element.style, id))
+  }
+
+  /** 将 Cesium 拾取结果解析为 ElementStore 中的规范元素实例。 */
+  private resolvePickedElement(picks: PickResult[]): Element | null {
+    for (const pick of picks) {
+      const pickId = (pick as unknown as { id?: unknown }).id
+      const target = this.rendererManager.resolvePickTarget?.(pickId)
+      const id = target?.elementId ?? (typeof pickId === 'string' ? pickId : null)
+      if (!id) continue
+      const element = this.elementStore.get(id)
+      if (element) return element
+    }
+    return null
   }
 
   /** 清除某元素选中反馈并重渲染。 */
@@ -408,6 +526,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
     if (this._selectedId === id) this.deselect()
     if (this._hoveredId === id) this.unhover()
+    if (this.modifier.editingElement?.id === id) this.exitEdit()
 
     this.rendererManager.remove(id)
     this.feedback.clearEntry(id)

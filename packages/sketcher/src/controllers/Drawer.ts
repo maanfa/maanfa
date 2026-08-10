@@ -34,7 +34,10 @@ class Drawer implements IController, InteractionHandler {
   elementStore!: IElementStore
   viewer!: Viewer
   cursorManager!: CursorManager
-  autoEdit = false
+  /** 当前绘制会话完成后是否自动进入编辑。 */
+  autoEdit = true
+  /** Sketcher 级默认值，DrawOption.autoEdit 可对单次绘制覆盖。 */
+  defaultAutoEdit = true
 
   onDrawFinish?: DrawFinishCallback
 
@@ -49,7 +52,8 @@ class Drawer implements IController, InteractionHandler {
    */
   enterDraw(opt: DrawOption): void {
     this.opt = opt
-    this.autoEdit = opt.autoEdit ?? false
+    // 绘制完成后默认进入编辑；调用方可显式传 false 保持静态结果。
+    this.autoEdit = opt.autoEdit ?? this.defaultAutoEdit
 
     const renderer = this.rendererManager.elementRenderer.get(opt.type)
     if (!renderer) {

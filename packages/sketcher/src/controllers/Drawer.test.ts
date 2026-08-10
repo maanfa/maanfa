@@ -147,6 +147,53 @@ describe('Drawer', () => {
     expect(onDrawFinish).toHaveBeenCalledTimes(1)
   })
 
+  it('auto-edits newly completed elements by default', () => {
+    const rendererManager = makeRendererManager()
+    ;(rendererManager.elementRenderer.get as ReturnType<typeof vi.fn>).mockReturnValue({} as never)
+    const store = makeStore()
+    const drawer = new Drawer()
+    drawer.rendererManager = rendererManager
+    drawer.elementStore = store
+    drawer.viewer = {} as never
+    drawer.enterDraw({ type: 'polyline' })
+    ;(drawer as unknown as { strategy: IDrawStrategy | null }).strategy = {
+      coords: coords2(),
+      canFinish: () => true,
+      reset: vi.fn(),
+    } as unknown as IDrawStrategy
+    ;(drawer as unknown as { opt: unknown }).opt = { type: 'polyline' }
+    ;(drawer as unknown as { drawContext: unknown }).drawContext = { clearDraft: vi.fn() } as never
+    const onDrawFinish = vi.fn()
+    drawer.onDrawFinish = onDrawFinish
+
+    ;(drawer as unknown as { commitElement(): void }).commitElement()
+
+    expect(onDrawFinish).toHaveBeenCalledWith(expect.anything(), true)
+  })
+
+  it('allows callers to keep a completed element static', () => {
+    const rendererManager = makeRendererManager()
+    ;(rendererManager.elementRenderer.get as ReturnType<typeof vi.fn>).mockReturnValue({} as never)
+    const store = makeStore()
+    const drawer = new Drawer()
+    drawer.rendererManager = rendererManager
+    drawer.elementStore = store
+    drawer.viewer = {} as never
+    drawer.enterDraw({ type: 'polyline', autoEdit: false })
+    ;(drawer as unknown as { strategy: IDrawStrategy | null }).strategy = {
+      coords: coords2(),
+      canFinish: () => true,
+      reset: vi.fn(),
+    } as unknown as IDrawStrategy
+    ;(drawer as unknown as { drawContext: unknown }).drawContext = { clearDraft: vi.fn() } as never
+    const onDrawFinish = vi.fn()
+    drawer.onDrawFinish = onDrawFinish
+
+    ;(drawer as unknown as { commitElement(): void }).commitElement()
+
+    expect(onDrawFinish).toHaveBeenCalledWith(expect.anything(), false)
+  })
+
   it('releases the draw cursor after committing', () => {
     const rendererManager = makeRendererManager()
     const store = makeStore()

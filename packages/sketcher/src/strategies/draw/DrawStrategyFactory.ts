@@ -11,7 +11,7 @@ type DrawOption = {
   type: 'marker' | 'polyline' | 'polygon'
   /** 绘制完成后的结束动作（线/面可用） */
   endingAction?: 'right-up' | 'double-click'
-  /** 是否在完成绘制后自动进入编辑模式 */
+  /** 是否在完成绘制后自动进入编辑模式，默认 `true` */
   autoEdit?: boolean
   /** 新元素的基础样式（实例级） */
   style?: ElementStyle

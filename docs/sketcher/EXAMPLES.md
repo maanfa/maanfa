@@ -7,7 +7,11 @@ import { Viewer } from 'cesium'
 import { Sketcher } from '@maanfa/sketcher'
 
 const viewer = new Viewer('cesiumContainer')
-const sketcher = new Sketcher(viewer)
+const sketcher = new Sketcher(viewer, {
+  interaction: {
+    enablePickToEdit: true,
+  },
+})
 
 // 开启调试日志
 sketcher.debug = true
@@ -16,7 +20,7 @@ sketcher.debug = true
 ## 2. 绘制点
 
 ```typescript
-sketcher.enterDraw({ type: 'marker' })
+sketcher.enterDraw({ type: 'marker' }) // 完成后默认自动进入编辑
 
 sketcher.on('draw-finish', ({ element }) => {
   console.log('点坐标:', element.coords)
@@ -29,7 +33,6 @@ sketcher.on('draw-finish', ({ element }) => {
 sketcher.enterDraw({
   type: 'polyline',
   endingAction: 'right-up',
-  autoEdit: true, // 完成自动进入编辑
 })
 
 sketcher.on('draw-finish', ({ element }) => {
@@ -44,6 +47,9 @@ sketcher.enterDraw({
   type: 'polygon',
   endingAction: 'double-click',
 })
+
+// 静态添加/导入的元素也可按实例或 id 手动进入编辑
+sketcher.enterEdit('existing-element-id')
 ```
 
 ## 5. 编辑元素

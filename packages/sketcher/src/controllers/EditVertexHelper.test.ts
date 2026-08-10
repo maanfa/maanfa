@@ -96,4 +96,18 @@ describe('EditVertexHelper', () => {
     expect(channel.clearLabels).toHaveBeenCalled()
     expect(helper.picked).toBeNull()
   })
+
+  it('reuses resolved visual positions across repeated syncs', () => {
+    const resolvePosition = vi.fn((position: Cartesian3) => position)
+    const channel = mockChannel()
+    const helper = new EditVertexHelper(channel, project, resolvePosition)
+    const line = makeLine()
+
+    helper.bind(line)
+    const callsAfterBind = resolvePosition.mock.calls.length
+    helper.sync(line)
+
+    expect(callsAfterBind).toBeGreaterThan(0)
+    expect(resolvePosition).toHaveBeenCalledTimes(callsAfterBind)
+  })
 })

@@ -17,7 +17,11 @@ function log(msg: string): void {
 }
 
 function handleViewerReady(viewer: Viewer): void {
-  const sk = new Sketcher(viewer)
+  const sk = new Sketcher(viewer, {
+    interaction: {
+      enablePickToEdit: true,
+    },
+  })
   sk.debug = true
 
   sk.on('draw-finish', (evt) => {

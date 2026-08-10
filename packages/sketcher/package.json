@@ -12,12 +12,7 @@
     "cesium": ">=1.104.0"
   },
   "exports": {
-    ".": {
-      "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
+    ".": "./dist/index.js",
     "./package.json": "./package.json"
   },
   "devDependencies": {

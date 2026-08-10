@@ -1,4 +1,4 @@
-import { Cartesian2, Cartesian3, SceneTransforms } from 'cesium'
+import { Cartographic, Cartesian2, Cartesian3, SceneTransforms } from 'cesium'
 import type { MotionEvent, PositionedEvent, Viewer } from 'cesium'
 import type { Mode, EditSubState } from '../state/types'
 import type { IController } from './IController'
@@ -71,6 +71,10 @@ class Modifier implements IController, InteractionHandler {
   private editStrategy: IEditStrategy | null = null
   private hotkeyState: HotkeyState = { ctrl: false, alt: false, shift: false }
   private dragStartCoords: Cartesian3[] | null = null
+  /** 当前中点拖拽已经插入的新顶点索引；一次拖拽周期内只插入一次。 */
+  private insertedVertexIndex: number | null = null
+  /** 拖拽期间暂存相机输入开关，结束后恢复调用方原值。 */
+  private previousCameraInputs: boolean | null = null
 
   /** 当前编辑的元素（可空） */
   get editingElement(): Element | null {
@@ -84,20 +88,24 @@ class Modifier implements IController, InteractionHandler {
   /**
    * 进入编辑模式：按元素类型取常驻 elementRenderer 注入 EditContext。
    */
-  enterEdit(element: Element): void {
-    this.element = element
-
+  enterEdit(element: Element): boolean {
     const renderer = this.rendererManager.elementRenderer.get(element.type)
     if (!renderer) {
       console.warn(`[Modifier] no element renderer for type "${element.type}"`)
-      return
+      return false
     }
+
+    // 允许从一个元素切换到另一个元素时复用同一套编辑生命周期。
+    this.clearEditContext()
+    this.element = element
 
     this.editContext = new EditContext(
       this.rendererManager,
       renderer,
-      new EditVertexHelper(this.rendererManager.edit, (p) =>
-        SceneTransforms.worldToWindowCoordinates(this.viewer.scene, p, new Cartesian2()) ?? undefined,
+      new EditVertexHelper(
+        this.rendererManager.edit,
+        (p) => SceneTransforms.worldToWindowCoordinates(this.viewer.scene, p, new Cartesian2()) ?? undefined,
+        (p) => this.resolveEditPosition(p),
       ),
       this.resolveStyle,
     )
@@ -107,15 +115,15 @@ class Modifier implements IController, InteractionHandler {
     this.stateMachine?.transition('edit')
     this.stateMachine?.setEditSubState('ready')
     this.registerCursors()
+    return true
   }
 
   exitEdit(): void {
-    this.editContext?.helper.detach()
-    this.rendererManager.edit.clearGuides()
-    this.editContext = null
-    this.editStrategy = null
+    this.clearEditContext()
     this.element = null
     this.dragStartCoords = null
+    this.insertedVertexIndex = null
+    this.restoreCameraInputs()
     this.releaseCursors()
     this.stateMachine?.transition('idle')
   }
@@ -123,12 +131,11 @@ class Modifier implements IController, InteractionHandler {
   onModeEnter(_mode: Mode, _sub: EditSubState | null): void {}
 
   onModeExit(_mode: Mode, _sub: EditSubState | null): void {
-    this.editContext?.helper.detach()
-    this.rendererManager.edit.clearGuides()
-    this.editContext = null
-    this.editStrategy = null
+    this.clearEditContext()
     this.element = null
     this.dragStartCoords = null
+    this.insertedVertexIndex = null
+    this.restoreCameraInputs()
     this.releaseCursors()
   }
 
@@ -138,7 +145,11 @@ class Modifier implements IController, InteractionHandler {
     if (!this.editContext.helper.onLeftDown(e.position)) return false // 未命中/不可交互 → 让 Picker 处理
     const picked = this.editContext.helper.picked!
     this.dragStartCoords = this.element.cloneCoords()
+    this.insertedVertexIndex = null
+    this.previousCameraInputs = this.viewer.scene.screenSpaceCameraController.enableInputs
+    this.viewer.scene.screenSpaceCameraController.enableInputs = false
     this.stateMachine?.setEditSubState(picked.id.kind === 'midpoint' ? 'inserting' : 'dragging')
+    this.registerCursors()
     return true
   }
 
@@ -152,6 +163,8 @@ class Modifier implements IController, InteractionHandler {
     this.editContext.helper.onLeftUp()
     this.stateMachine?.setEditSubState('ready')
     this.dragStartCoords = null
+    this.insertedVertexIndex = null
+    this.restoreCameraInputs()
     this.editContext.helper.sync(this.element!)
     return true
   }
@@ -198,14 +211,21 @@ class Modifier implements IController, InteractionHandler {
   private applyMutation(motion: EditMotion): void {
     if (motion.kind === 'vertex') {
       this.element!.setVertex(motion.handle.index, motion.to)
-    } else {
+    } else if (this.insertedVertexIndex === null) {
+      // 中点拖拽的第一次采样插入顶点；后续采样只更新这个顶点。
+      this.insertedVertexIndex = motion.handle.index + 1
       this.element!.insertVertex(motion.handle.index + 1, motion.to) // 中点拖拽 = 插入新顶点
+    } else {
+      this.element!.setVertex(this.insertedVertexIndex, motion.to)
     }
   }
 
   /** ESC 触发取消：恢复拖拽前的坐标。 */
   cancelCurrentDrag(): void {
-    if (!this.element || !this.dragStartCoords) return
+    if (!this.element || !this.dragStartCoords) {
+      this.restoreCameraInputs()
+      return
+    }
 
     const currentCoords = this.element.coords
     const startCoords = this.dragStartCoords
@@ -221,6 +241,8 @@ class Modifier implements IController, InteractionHandler {
     this.editContext?.helper.onLeftUp()
     this.stateMachine?.setEditSubState('ready')
     this.dragStartCoords = null
+    this.insertedVertexIndex = null
+    this.restoreCameraInputs()
     this.editContext?.renderElement(this.element)
     this.editContext?.helper.sync(this.element)
     this.registerCursors()
@@ -238,6 +260,39 @@ class Modifier implements IController, InteractionHandler {
   private releaseCursors(): void {
     this.cursorManager?.release('editor')
     this.cursorManager?.release('editor-handle')
+  }
+
+  /** 将辅助点贴到当前已加载的场景几何；未支持或未命中时保留原坐标。 */
+  private resolveEditPosition(position: Cartesian3): Cartesian3 {
+    const scene = this.viewer.scene
+    if (scene.clampToHeightSupported) {
+      const clamped = scene.clampToHeight(position)
+      if (clamped) return clamped
+    }
+
+    if (!scene.globe?.getHeight) return position
+    const cartographic = Cartographic.fromCartesian(position)
+    const terrainHeight = scene.globe.getHeight(cartographic)
+    if (terrainHeight === undefined) return position
+    cartographic.height = terrainHeight
+    return Cartographic.toCartesian(cartographic, undefined, new Cartesian3())
+  }
+
+  /** 恢复拖拽开始前的 Cesium 相机输入状态。 */
+  private restoreCameraInputs(): void {
+    if (this.previousCameraInputs === null) return
+    this.viewer.scene.screenSpaceCameraController.enableInputs = this.previousCameraInputs
+    this.previousCameraInputs = null
+  }
+
+  /** 清理当前编辑上下文及其临时辅助图形。 */
+  private clearEditContext(): void {
+    if (this.editContext) {
+      this.editContext.helper.detach()
+      this.rendererManager.edit.clearGuides()
+    }
+    this.editContext = null
+    this.editStrategy = null
   }
 
   private refreshGuides(): void {

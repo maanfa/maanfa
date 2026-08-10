@@ -1,4 +1,4 @@
-import { Color } from 'cesium'
+import { Cartesian2, Color, HorizontalOrigin, VerticalOrigin } from 'cesium'
 import type { LineStyle, FillStyle, SymbolStyle } from '../styles'
 import type {
   DrawPreviewAppearance,
@@ -85,8 +85,13 @@ const DefaultVertexAppearance: DrawVertexAppearance = {
 
 /** 距离标签默认外观 */
 const DefaultLabelAppearance: LabelAppearance = {
-  font: '12px sans-serif',
+  font: 'bold 13px sans-serif',
   scale: 1,
+  // 以线段中点为锚点，向屏幕上方留出间距，避免文字压住几何线。
+  pixelOffset: new Cartesian2(0, -8),
+  horizontalOrigin: HorizontalOrigin.CENTER,
+  verticalOrigin: VerticalOrigin.BOTTOM,
+  disableDepthTestDistance: Number.POSITIVE_INFINITY,
 }
 
 export {

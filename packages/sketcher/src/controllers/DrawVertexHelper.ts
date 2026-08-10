@@ -3,6 +3,7 @@ import type DrawRenderChannel from '../renderer/draw/DrawRenderChannel'
 import type { DistanceLabelInfo, DrawVertexAppearance, LabelAppearance } from '../renderer/types'
 import VertexElement from '../renderer/helpers/VertexElement'
 import { formatDistance } from '../renderer/helpers/formatDistance'
+import surfaceMidpoint from '../utils/surfaceMidpoint'
 
 interface DrawVertexSyncOptions {
   /** 几何类型：polygon 时额外渲染闭合边 / 临时闭合边标签 */
@@ -62,7 +63,7 @@ class DrawVertexHelper {
   }
 
   private labelInfo(segmentIndex: number, a: Cartesian3, b: Cartesian3): DistanceLabelInfo {
-    const position = Cartesian3.midpoint(a, b, new Cartesian3())
+    const position = surfaceMidpoint(a, b)
     return { position, text: formatDistance(Cartesian3.distance(a, b)) }
   }
 }

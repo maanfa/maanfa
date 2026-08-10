@@ -3,6 +3,7 @@ import type Element from '../../element/Element'
 import type { DistanceLabelInfo } from '../types'
 import { formatDistance } from './formatDistance'
 import type { IAuxElement } from './types'
+import surfaceMidpoint from '../../utils/surfaceMidpoint'
 
 /**
  * 距离标签（通用）：interactive 恒 false，绘制/编辑共用。
@@ -43,8 +44,13 @@ class DistanceLabel implements IAuxElement {
 
   /** 按边端点重算中点与文本。 */
   update(a: Cartesian3, b: Cartesian3): void {
-    this._position = Cartesian3.midpoint(a, b, new Cartesian3())
+    this._position = surfaceMidpoint(a, b)
     this._text = formatDistance(Cartesian3.distance(a, b))
+  }
+
+  /** 设置仅用于渲染的标签位置，不修改几何数据。 */
+  setPosition(position: Cartesian3): void {
+    this._position = Cartesian3.clone(position)
   }
 
   toInfo(): DistanceLabelInfo {

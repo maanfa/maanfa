@@ -23,6 +23,8 @@ interface LabelOptions {
   outlineWidth?: number
   pixelOffset?: Cartesian2
   scale?: number
+  horizontalOrigin?: import('cesium').HorizontalOrigin
+  verticalOrigin?: import('cesium').VerticalOrigin
   disableDepthTestDistance?: number
 }
 

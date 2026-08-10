@@ -66,6 +66,12 @@ interface LabelAppearance {
   outlineWidth?: number
   pixelOffset?: Cartesian2
   scale?: number
+  /** 标签水平锚点 */
+  horizontalOrigin?: import('cesium').HorizontalOrigin
+  /** 标签垂直锚点 */
+  verticalOrigin?: import('cesium').VerticalOrigin
+  /** 禁用深度测试距离；Infinity 表示不被地形遮挡 */
+  disableDepthTestDistance?: number
 }
 
 /** 顶点辅助元素单项样式 */

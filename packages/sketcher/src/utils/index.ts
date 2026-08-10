@@ -6,3 +6,4 @@ export {
   segmentsIntersect2D,
 } from './intersection'
 export { exportToGeoJSON, importFromGeoJSON, elementToGeoJSON, geoJSONToElement } from './geojson'
+export { default as surfaceMidpoint } from './surfaceMidpoint'

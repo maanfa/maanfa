@@ -83,6 +83,9 @@ class DrawRenderChannel {
         outlineWidth: s.outlineWidth,
         pixelOffset: s.pixelOffset,
         scale: s.scale,
+        horizontalOrigin: s.horizontalOrigin,
+        verticalOrigin: s.verticalOrigin,
+        disableDepthTestDistance: s.disableDepthTestDistance,
       },
     }))
     this.container.set(DRAW_CHANNEL_KEYS.labels, items)

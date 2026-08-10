@@ -17,10 +17,18 @@ import { Viewer } from 'cesium'
 import { Sketcher } from '@maanfa/sketcher'
 
 const viewer = new Viewer(/* ... */)
-const sketcher = new Sketcher(viewer)
+const sketcher = new Sketcher(viewer, {
+  interaction: {
+    // 点击已绘制元素后自动进入编辑
+    enablePickToEdit: true,
+  },
+})
 
-// 进入点绘制模式
+// 进入点绘制模式；绘制完成后默认自动进入编辑
 sketcher.enterDraw({ type: 'marker' })
+
+// 如需绘制完成后保持静态结果，显式关闭自动编辑
+sketcher.enterDraw({ type: 'marker', autoEdit: false })
 
 // 监听绘制完成
 sketcher.on('draw-finish', ({ element }) => {
@@ -44,6 +52,7 @@ const geojson = sketcher.exportGeoJSON()
 | **Modifier** | 编辑控制器，支持拖拽顶点/中点 |
 | **HoverManager** | 悬停高亮 |
 | **Picker** | 场景拾取 |
+| **InteractionArbiter** | 协调点选编辑、空白退出等跨控制器行为 |
 
 ## 扩展点
 
@@ -64,7 +73,7 @@ const geojson = sketcher.exportGeoJSON()
 |------|------|
 | `enterDraw(opt)` | 进入绘图模式 |
 | `exitDraw()` | 退出绘图模式 |
-| `enterEdit(element)` | 进入编辑模式 |
+| `enterEdit(elementOrId)` | 进入编辑模式；可传入已添加元素实例或其 id |
 | `exitEdit()` | 退出编辑模式 |
 | `hover(id)` / `unhover()` | 主动悬停 |
 | `select(id)` / `deselect()` | 主动选中 |
@@ -118,3 +127,22 @@ sketcher.on('hover-change', ({ id }) => {
 ```
 
 `hoverStyle` 只覆盖其中明确提供的样式分项，未提供的分项沿用基础样式。例如 polygon 的悬停样式只设置 `line` 时，`fill` 的颜色和透明度保持不变；移出元素后会自动恢复基础样式。
+
+### 编辑行为
+
+绘制完成后默认立即进入编辑模式，可直接拖拽顶点或中点；传入 `autoEdit: false` 可关闭这一行为。
+静态添加或导入的元素也可通过 `sketcher.enterEdit(element)` 或 `sketcher.enterEdit(element.id)` 手动进入编辑，调用 `sketcher.exitEdit()` 退出。
+
+### 交互仲裁
+
+跨控制器行为由 `Sketcher.interaction` 统一管理：
+
+| 开关 | 默认值 | 说明 |
+|------|--------|------|
+| `enableAutoEdit` | `true` | 绘制完成后自动进入编辑；`DrawOption.autoEdit` 可覆盖单次绘制 |
+| `enablePickToEdit` | `false` | 空闲态点击已绘制元素后进入编辑 |
+| `enableBlankClickExitEdit` | `true` | 编辑态点击空白处退出编辑 |
+
+编辑与绘制始终互斥。调用 `enterDraw()` 时，Sketcher 会先退出当前编辑并清理编辑辅助图形，再进入绘制模式，此行为不可关闭。
+
+这些开关可在运行时直接调整，例如 `sketcher.interaction.enablePickToEdit = true`。

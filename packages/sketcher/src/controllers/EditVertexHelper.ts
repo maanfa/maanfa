@@ -17,16 +17,20 @@ const EDIT_INTERACTION: InteractionFlags = { interactive: true, hoverable: true,
  * 接收 Modifier 的鼠标事件透传：命中 → 选中可交互辅助元素 → 拖拽 → 上行 EditMotion。
  */
 class EditVertexHelper {
+  private static readonly POSITION_CACHE_LIMIT = 512
   private vertices: VertexElement[] = []
   private midpoints: MidpointElement[] = []
   private labels: DistanceLabel[] = []
   private _picked: VertexElement | MidpointElement | null = null
   private hovered: VertexElement | MidpointElement | null = null
   private dragFrom: Cartesian3 | null = null
+  /** 贴地解析缓存：相机移动/悬停同步时复用未变化的辅助坐标。 */
+  private positionCache = new Map<string, Cartesian3>()
 
   constructor(
     private readonly channel: EditRenderChannel,
     private readonly project: (pos: Cartesian3) => Cartesian2 | undefined,
+    private readonly resolvePosition: (pos: Cartesian3) => Cartesian3 = (pos) => pos,
   ) {}
 
   /** 当前选中的辅助元素（onLeftDown 后非空；Modifier 据此判定 dragging/inserting）。 */
@@ -36,6 +40,7 @@ class EditVertexHelper {
 
   /** 进入编辑：绑定元素并重建辅助元素。 */
   bind(element: Element): void {
+    this.positionCache.clear()
     this.vertices = []
     this.midpoints = []
     this.labels = []
@@ -108,9 +113,18 @@ class EditVertexHelper {
       (i) => new DistanceLabel(i, new Cartesian3(), ''),
     )
 
-    for (const v of this.vertices) v.sync(element)
-    for (const m of this.midpoints) m.sync(element)
-    for (const l of this.labels) l.sync(element)
+    for (const v of this.vertices) {
+      v.sync(element)
+      v.setPosition(this.resolveCached(v.position))
+    }
+    for (const m of this.midpoints) {
+      m.sync(element)
+      m.setPosition(this.resolveCached(m.position))
+    }
+    for (const l of this.labels) {
+      l.sync(element)
+      l.setPosition(this.resolveCached(l.position))
+    }
 
     const handleInfos = this.toHandleInfos()
     this.channel.renderHandles(
@@ -128,6 +142,7 @@ class EditVertexHelper {
     this._picked = null
     this.hovered = null
     this.dragFrom = null
+    this.positionCache.clear()
     this.channel.clearHandles()
     this.channel.clearLabels()
   }
@@ -150,6 +165,21 @@ class EditVertexHelper {
     if (!target) return null
     const idx = infos.findIndex((h) => h.type === target.id.kind && h.index === target.id.index)
     return idx === -1 ? null : idx
+  }
+
+  /** 按 ECEF 坐标缓存贴地解析结果，并限制缓存规模。 */
+  private resolveCached(position: Cartesian3): Cartesian3 {
+    const key = `${position.x},${position.y},${position.z}`
+    const cached = this.positionCache.get(key)
+    if (cached) return cached
+
+    const resolved = Cartesian3.clone(this.resolvePosition(position))
+    if (this.positionCache.size >= EditVertexHelper.POSITION_CACHE_LIMIT) {
+      const oldest = this.positionCache.keys().next().value
+      if (oldest !== undefined) this.positionCache.delete(oldest)
+    }
+    this.positionCache.set(key, resolved)
+    return resolved
   }
 }
 

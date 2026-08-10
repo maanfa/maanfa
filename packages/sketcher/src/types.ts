@@ -8,6 +8,7 @@ import type { PickEventPayload } from './controllers/Picker'
 interface DrawOption {
   type: ElementType
   endingAction?: 'right-up' | 'double-click'
+  /** 绘制完成后是否自动进入编辑，默认 `true` */
   autoEdit?: boolean
   /** 新元素的基础样式（实例级） */
   style?: ElementStyle

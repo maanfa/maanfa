@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Cartesian3 } from 'cesium'
 import DrawVertexHelper from './DrawVertexHelper'
+import surfaceMidpoint from '../utils/surfaceMidpoint'
 import type DrawRenderChannel from '../renderer/draw/DrawRenderChannel'
 import type { DistanceLabelInfo } from '../renderer/types'
 
@@ -32,7 +33,7 @@ describe('DrawVertexHelper', () => {
 
     const labels = labelsOf(ch)
     expect(labels).toHaveLength(3)
-    expect(Cartesian3.equals(labels[2]!.position, Cartesian3.midpoint(c, cur, new Cartesian3()))).toBe(true)
+    expect(Cartesian3.equals(labels[2]!.position, surfaceMidpoint(c, cur))).toBe(true)
   })
 
   it('includes the closing edge label for polygon without cursor', () => {
@@ -46,7 +47,7 @@ describe('DrawVertexHelper', () => {
 
     const labels = labelsOf(ch)
     expect(labels).toHaveLength(3) // A-B, B-C, C-A
-    expect(Cartesian3.equals(labels[2]!.position, Cartesian3.midpoint(c, a, new Cartesian3()))).toBe(true)
+    expect(Cartesian3.equals(labels[2]!.position, surfaceMidpoint(c, a))).toBe(true)
   })
 
   it('replaces the closing edge with active + temporary closing labels while cursor is active', () => {
@@ -61,8 +62,8 @@ describe('DrawVertexHelper', () => {
 
     const labels = labelsOf(ch)
     expect(labels).toHaveLength(4) // A-B, B-C, C-cur, cur-A
-    expect(Cartesian3.equals(labels[2]!.position, Cartesian3.midpoint(c, cur, new Cartesian3()))).toBe(true)
-    expect(Cartesian3.equals(labels[3]!.position, Cartesian3.midpoint(cur, a, new Cartesian3()))).toBe(true)
+    expect(Cartesian3.equals(labels[2]!.position, surfaceMidpoint(c, cur))).toBe(true)
+    expect(Cartesian3.equals(labels[3]!.position, surfaceMidpoint(cur, a))).toBe(true)
   })
 
   it('shows the temporary closing label from 2 placed vertices', () => {
@@ -76,7 +77,7 @@ describe('DrawVertexHelper', () => {
 
     const labels = labelsOf(ch)
     expect(labels).toHaveLength(3) // A-B, B-cur, cur-A
-    expect(Cartesian3.equals(labels[2]!.position, Cartesian3.midpoint(cur, a, new Cartesian3()))).toBe(true)
+    expect(Cartesian3.equals(labels[2]!.position, surfaceMidpoint(cur, a))).toBe(true)
   })
 
   it('renders only placed edges for polygon below 3 vertices without cursor', () => {

@@ -24,6 +24,7 @@ export {
   GroundClampResolver,
   HoverManager,
   Picker,
+  InteractionArbiter,
   DrawContext,
   DrawVertexHelper,
   EditVertexHelper,
@@ -38,6 +39,8 @@ export type {
   IEditContext,
   PickEventPayload,
   PickResultCallback,
+  InteractionPolicy,
+  InteractionArbiterHost,
 } from './controllers'
 
 // 策略接口（供包外扩展）
@@ -70,6 +73,7 @@ export {
   pickSceneEllipsoid,
   checkSelfIntersection,
   checkEditSelfIntersection,
+  surfaceMidpoint,
   exportToGeoJSON,
   importFromGeoJSON,
 } from './utils'

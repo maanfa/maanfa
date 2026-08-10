@@ -75,6 +75,9 @@ class EditRenderChannel {
         outlineWidth: s.outlineWidth,
         pixelOffset: s.pixelOffset,
         scale: s.scale,
+        horizontalOrigin: s.horizontalOrigin,
+        verticalOrigin: s.verticalOrigin,
+        disableDepthTestDistance: s.disableDepthTestDistance,
       },
     }))
     this.container.set(EDIT_CHANNEL_KEYS.labels, items)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Cartesian3 } from 'cesium'
 import DistanceLabel from './DistanceLabel'
+import surfaceMidpoint from '../../utils/surfaceMidpoint'
 import { formatDistance } from './formatDistance'
 
 describe('formatDistance', () => {
@@ -18,7 +19,7 @@ describe('DistanceLabel', () => {
     const b = Cartesian3.fromDegrees(1, 0, 0)
     label.update(a, b)
 
-    expect(label.position.x).toBeCloseTo((a.x + b.x) / 2, 6)
+    expect(Cartesian3.equals(label.position, surfaceMidpoint(a, b))).toBe(true)
     expect(label.text).toMatch(/ km$| m$/)
     expect(label.interactive).toBe(false)
     expect(label.hoverable).toBe(false)

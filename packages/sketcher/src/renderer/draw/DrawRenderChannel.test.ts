@@ -38,6 +38,12 @@ describe('DrawRenderChannel', () => {
 
     channel.renderLabels([{ position: c0, text: '10 m' }])
     expect(container.set).toHaveBeenCalledWith('draw:labels', expect.any(Array))
+
+    const labelCall = (container.set as ReturnType<typeof vi.fn>).mock.calls
+      .find(([key]) => key === 'draw:labels')
+    const label = labelCall?.[1]?.[0]?.label
+    expect(label.font).toBe('bold 13px sans-serif')
+    expect(label.disableDepthTestDistance).toBe(Number.POSITIVE_INFINITY)
   })
 
   it('clear removes all four keys', () => {

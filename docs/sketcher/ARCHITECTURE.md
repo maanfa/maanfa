@@ -19,6 +19,7 @@ ScreenSpaceEvent → MouseEventManager（按优先级链分发）
       ├── Modifier ─→ EditContext ─→ EditStrategies ─ EditVertexHelper
       ├── HoverManager ─→ Sketcher（反馈合成 → renderer.render）
       ├── Picker ─→ emit 'pick-result'
+      ├── InteractionArbiter ─→ 统一协调 Picker / Drawer / Modifier 的模式接管
       ├── ElementStore（真值存储/查询；onMutation → renderer.render）
       └── Sketcher ─ FeedbackStyleStack（hover/select/edit 合成）
                           │
@@ -30,7 +31,41 @@ ScreenSpaceEvent → MouseEventManager（按优先级链分发）
                 └─ EditRenderChannel（handles / labels / guides）
 ```
 
-事件链优先级：**idle** → Picker + HoverManager；**draw** → Drawer 独占；**edit** → Modifier 高优 + Picker + HoverManager 回退。
+事件链优先级：**idle** → Picker + HoverManager；**draw** → Drawer 独占；**edit** → Modifier 高优 + Picker 回退（编辑态不启用元素 Hover）。
+
+## 交互仲裁与互斥约束
+
+`Picker` 只报告画布点击结果，是否进入编辑由 `InteractionArbiter` 按 `Sketcher.interaction` 策略决定：
+
+- `enablePickToEdit`：空闲态点击已渲染 Element 后进入编辑；
+- `enableBlankClickExitEdit`：编辑态点击空白处退出编辑；
+- `enableAutoEdit`：绘制完成后默认进入编辑，单次 `DrawOption.autoEdit` 优先级更高。
+
+编辑与绘制是不可配置的互斥关系。`Sketcher.enterDraw()` 在创建 Drawer 会话前固定调用 `exitEdit()`，确保编辑辅助图形、编辑反馈样式、相机输入状态均已清理。
+
+```mermaid
+sequenceDiagram
+    participant Canvas as 画布
+    participant Picker
+    participant Arbiter as InteractionArbiter
+    participant Sketcher
+    participant Modifier
+    participant Drawer
+
+    Canvas->>Picker: left click
+    Picker->>Arbiter: pick-result(picks)
+    Arbiter->>Sketcher: enterEdit(element)
+    Sketcher->>Modifier: bind element + edit mode
+
+    Canvas->>Picker: blank click
+    Picker->>Arbiter: pick-result([])
+    Arbiter->>Sketcher: exitEdit()
+    Sketcher->>Modifier: detach helpers
+
+    Sketcher->>Arbiter: beforeEnterDraw()
+    Arbiter->>Sketcher: exitEdit() when mode = edit
+    Sketcher->>Drawer: enterDraw(opt)
+```
 
 ## 数据流
 
@@ -83,7 +118,7 @@ ESC → StateMachine.cancel()
 |---|---|---|---|---|---|
 | Idle | — | ❌ | ❌ | ✅ | ✅ |
 | Draw | Ready / Drawing | ✅ 独占 | ❌ | ❌ | ❌ |
-| Edit | Ready | ❌ | ✅ 高优 | ✅ | ✅ 回退 |
+| Edit | Ready | ❌ | ✅ 高优 | ❌ | ✅ 回退 |
 | Edit | Dragging / Inserting | ❌ | ✅ 独占 | ❌ | ❌ |
 
 ## 职责边界
