@@ -95,14 +95,13 @@ element.setStyles({
   selectedStyle: { line: { color: '#ffd700', opacity: 1, width: 4 } },
 })
 
-// 全局兜底：构造时传入
+// 全局选择/编辑兜底：构造时传入；悬停样式必须配置在 Element 实例上
 const sketcher = new Sketcher(viewer, {
   styles: {
-    hoverStyle: { line: { color: '#ffff00', opacity: 1, width: 3 } },
     selectedStyle: { line: { color: '#ff8c00', opacity: 1, width: 4 } },
     editingStyle: { line: { color: '#00ffff', opacity: 1, width: 4 } },
   },
 })
 ```
 
-解析优先级：实例反馈样式 > 外观类默认反馈样式 > 元素自身基础样式。
+悬停样式只读取 `element.hoverStyle`；选择/编辑样式未配置实例值时才使用全局兜底。

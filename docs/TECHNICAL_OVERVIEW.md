@@ -169,8 +169,8 @@ type ElementStyle = {
 ```
 
 - `polyline` = `line`；`polygon` = `line`（轮廓）+ `fill`（填充）；`marker` = `symbol` / `line`。
-- 样式是实例级（`element.style` / `hoverStyle` / `selectedStyle` / `editingStyle`），外观类 `styles` 仅作全局兜底。
-- 解析优先级：实例反馈样式 > 全局兜底反馈样式 > 元素基础样式。
+- 样式是实例级（`element.style` / `hoverStyle` / `selectedStyle` / `editingStyle`）；悬停样式必须关联具体 Element。
+- 选择/编辑样式未配置实例值时，可使用外观类 `styles` 的全局兜底。
 
 ## 渲染管理
 

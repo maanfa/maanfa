@@ -11,6 +11,8 @@ interface ElementRendererContext {
   useAsyncGeometry: () => boolean
   /** 告警 logger */
   warn: (msg: string) => void
+  /** 创建并登记可反查到 Element 的 Cesium pick token。 */
+  createPickId?: (elementId: string, part: string) => string
 }
 
 /**

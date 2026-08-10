@@ -86,7 +86,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
   /** 日志记录器 */
   readonly logger: ReturnType<typeof createLogger> = createLogger(false)
 
-  /** 全局默认反馈样式（fallback），元素实例未配置时兜底 */
+  /** 全局默认选择/编辑反馈样式（悬停反馈始终由 Element 实例提供） */
   readonly globalStyles: ElementStyles = {}
 
   /** 反馈样式栈（hover / select / edit 由外观层合成后经 render(element, style) 传入） */
@@ -377,7 +377,7 @@ class Sketcher extends EventEmitter<SketcherEvents> {
 
     const element = this.elementStore.get(id)
     if (!element) return
-    this.feedback.apply(id, element.hoverStyle ?? this.globalStyles.hoverStyle, 'hover')
+    this.feedback.apply(id, element.hoverStyle, 'hover')
     this.rendererManager.render(element, this.feedback.effective(element.style, id))
   }
 

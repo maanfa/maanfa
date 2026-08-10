@@ -5,8 +5,8 @@ import type { ElementStyle, ElementStyles } from '../styles'
 /**
  * 解析某元素在指定状态下的生效样式。
  *
- * 优先级（见技能 canvas-interaction.md §7）：
- *  元素实例反馈样式 > 外观类默认反馈样式 > 元素自身基础样式（element.style）
+ * 选择/编辑反馈优先使用 Element 实例样式，再回退到外观类默认样式。
+ * 悬停反馈只使用 Element 实例样式。
  *
  * 都未配置时返回 `undefined`（无反馈）。
  */
@@ -16,7 +16,7 @@ function resolveElementStyle(
   layer?: 'hover' | 'selected' | 'editing',
 ): ElementStyle | undefined {
   if (layer === 'hover') {
-    return element.hoverStyle ?? globalStyles?.hoverStyle ?? element.style
+    return element.hoverStyle ?? element.style
   }
   if (layer === 'selected') {
     return element.selectedStyle ?? globalStyles?.selectedStyle ?? element.style

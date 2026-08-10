@@ -103,10 +103,9 @@ element.setStyles({
   selectedStyle: { line: { color: '#ffd700', opacity: 1, width: 4 } },
 })
 
-// 全局兜底样式（元素未配置时生效）
+// 全局选择/编辑兜底样式（悬停样式必须配置在 Element 实例上）
 const sketcher = new Sketcher(viewer, {
   styles: {
-    hoverStyle: { line: { color: '#ffff00', opacity: 1, width: 3 } },
     selectedStyle: { line: { color: '#ff8c00', opacity: 1, width: 4 } },
     editingStyle: { line: { color: '#00ffff', opacity: 1, width: 4 } },
   },

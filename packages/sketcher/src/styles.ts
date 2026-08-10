@@ -93,11 +93,10 @@ interface ElementStyle {
 }
 
 /**
- * 全局默认反馈样式（fallback）。元素实例未配置时兜底。
+ * 全局默认选择/编辑反馈样式（fallback）。悬停样式必须配置在 Element 实例上。
  * 解析优先级：实例反馈样式 > 全局默认反馈样式 > 元素自身基础样式（element.style）。
  */
 interface ElementStyles {
-  hoverStyle?: ElementStyle
   selectedStyle?: ElementStyle
   editingStyle?: ElementStyle
 }

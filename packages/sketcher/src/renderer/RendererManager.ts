@@ -14,6 +14,9 @@ import DrawRenderChannel from './draw/DrawRenderChannel'
 import DrawPreviewRenderer from './draw/DrawPreviewRenderer'
 import EditRenderChannel from './edit/EditRenderChannel'
 import type { RenderedItem } from './rendering/PrimitiveContainer'
+import PickRegistry from './rendering/PickRegistry'
+import type { PickTarget } from './rendering/PickRegistry'
+import { DRAFT_ELEMENT_ID } from './constants'
 
 /**
  * CesiumJS Primitive + Appearance 适配层门面（内置唯一实现）。
@@ -41,6 +44,8 @@ class RendererManager implements IRendererManager {
 
   private readonly labelCollection: LabelCollection
 
+  private readonly pickRegistry = new PickRegistry()
+
   constructor(viewer: Viewer) {
     this.viewer = viewer
     this.pointCollection = new PointPrimitiveCollection()
@@ -53,6 +58,8 @@ class RendererManager implements IRendererManager {
     const ctx: ElementRendererContext = {
       useAsyncGeometry: () => this.useAsyncGeometry,
       warn: (m) => this.warn(m),
+      createPickId: (elementId, part) =>
+        this.pickRegistry.createPickId(elementId, part, elementId !== DRAFT_ELEMENT_ID),
     }
     this.elementRenderer = new ElementRendererHub(ctx, this.container)
     this.draw = new DrawRenderChannel(this.container, new DrawPreviewRenderer(ctx))
@@ -64,11 +71,17 @@ class RendererManager implements IRendererManager {
   }
 
   render(element: Element, style?: ElementStyle): void {
+    this.pickRegistry.removeElement(element.id)
     this.elementRenderer.render(element, style)
   }
 
   remove(id: string): void {
     this.elementRenderer.remove(id)
+    this.pickRegistry.removeElement(id)
+  }
+
+  resolvePickTarget(pickId: unknown): PickTarget | undefined {
+    return this.pickRegistry.resolve(pickId)
   }
 
   replaceElementItems(id: string, items: RenderedItem[]): void {
@@ -81,6 +94,7 @@ class RendererManager implements IRendererManager {
     this.edit.clearHandles()
     this.edit.clearLabels()
     this.edit.clearGuides()
+    this.pickRegistry.clear()
   }
 
   destroy(): void {

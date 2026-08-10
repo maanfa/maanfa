@@ -10,6 +10,7 @@ import type { RenderedItem } from './PrimitiveContainer'
 const ctx: ElementRendererContext = {
   useAsyncGeometry: () => true,
   warn: () => {},
+  createPickId: (elementId, part) => `mf-sk:${elementId}:${part}`,
 }
 
 function mockContainer(): PrimitiveContainer {

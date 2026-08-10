@@ -26,11 +26,11 @@ describe('resolveElementStyle', () => {
     expect(resolveElementStyle(el, undefined, 'hover')).toBe(el.hoverStyle)
   })
 
-  it('falls back to global default feedback style when instance has none', () => {
+  it('does not use global styles as a hover fallback', () => {
     const el = marker()
     el.style = { line: { color: '#ff0000', opacity: 1, width: 2 } }
-    const global = { hoverStyle: { line: { color: '#0000ff', opacity: 1, width: 2 } } }
-    expect(resolveElementStyle(el, global, 'hover')).toBe(global.hoverStyle)
+    const global = { selectedStyle: { line: { color: '#0000ff', opacity: 1, width: 2 } } }
+    expect(resolveElementStyle(el, global, 'hover')).toBe(el.style)
   })
 
   it('falls back to element base style when no feedback configured', () => {

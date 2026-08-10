@@ -5,6 +5,7 @@ import type ElementRendererHub from './rendering/ElementRendererHub'
 import type DrawRenderChannel from './draw/DrawRenderChannel'
 import type EditRenderChannel from './edit/EditRenderChannel'
 import type { RenderedItem } from './rendering/PrimitiveContainer'
+import type { PickTarget } from './rendering/PickRegistry'
 
 /**
  * CesiumJS Primitive + Appearance 适配层门面。
@@ -33,6 +34,9 @@ interface IRendererManager {
   render(element: Element, style?: ElementStyle): void
   /** 移除某元素的渲染原语（从 ElementStore 删除记录由外观层负责） */
   remove(id: string): void
+
+  /** 将 Cesium pick token 解析为业务 Element 部件；自定义 renderer 可不提供。 */
+  resolvePickTarget?(pickId: unknown): PickTarget | undefined
 
   /**
    * 低层：用给定 RenderedItem[] 替换某元素产物。

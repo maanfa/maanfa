@@ -25,11 +25,13 @@ import {
 import type { RenderedItem } from '../rendering/PrimitiveContainer'
 import type { ElementRendererContext } from './ElementRenderer'
 
-const PRIMITIVE_ID_PREFIX = 'mf-sk-'
-
 /** 共享的 Cesium 颜色转换工具。 */
 function toColor(hex: string, opacity = 1, warn?: (msg: string) => void): Color {
   return hexToCesiumColor(hex, opacity, warn)
+}
+
+function pickId(context: ElementRendererContext, elementId: string, part: string): string {
+  return context.createPickId?.(elementId, part) ?? elementId
 }
 
 /**
@@ -56,7 +58,7 @@ class MarkerRenderer {
           position: element.coords[0],
           color,
           pixelSize: radius * 2,
-          id: PRIMITIVE_ID_PREFIX + element.id,
+          id: pickId(this.context, element.id, 'marker'),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
       },
@@ -84,6 +86,7 @@ class PolylineRenderer {
           positions: element.coords,
           width: cfg.width,
         }),
+        id: pickId(this.context, element.id, 'polyline'),
       }),
       appearance: new PolylineMaterialAppearance({
         material: Material.fromType('Color', { color }),
@@ -123,6 +126,7 @@ class PolygonRenderer {
             polygonHierarchy: new PolygonHierarchy(hull),
             vertexFormat: PerInstanceColorAppearance.VERTEX_FORMAT,
           }),
+          id: pickId(this.context, element.id, 'polygon-fill'),
           attributes: { color: ColorGeometryInstanceAttribute.fromColor(fillColor) },
         }),
         appearance: new PerInstanceColorAppearance({ flat: true }),
@@ -143,6 +147,7 @@ class PolygonRenderer {
               positions: closed,
               width: outlineWidth,
             }),
+            id: pickId(this.context, element.id, 'polygon-outline'),
           }),
           appearance: new PolylineMaterialAppearance({
             material: Material.fromType('Color', { color: outlineColor }),

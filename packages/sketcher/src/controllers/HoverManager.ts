@@ -112,10 +112,14 @@ class HoverManager implements IController, InteractionHandler {
 
   /**
    * 从 Cesium pick 结果中提取 Element id。
-   * 通过遍历 ElementStore 反查 primitives。默认实现为简单桩，
-   * 外部可覆写实现更高效的映射查找。
+   * 优先通过 RendererManager 的 pick registry 解析部件 token，
+   * 再兼容自定义 renderer 直接使用 Element id 的情况。
    */
   private findElementId(pickedObj: any): string | null {
+    const target = this.rendererManager.resolvePickTarget?.(pickedObj?.id)
+    if (target) {
+      return this.elementStore.has(target.elementId) ? target.elementId : null
+    }
     if (pickedObj?.id && typeof pickedObj.id === 'string') {
       return this.elementStore.has(pickedObj.id) ? pickedObj.id : null
     }

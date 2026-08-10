@@ -2,6 +2,7 @@
 import { shallowRef, ref, markRaw, onBeforeUnmount } from 'vue'
 import { Sketcher, version as SketcherVersion } from '@maanfa/sketcher'
 import type { Viewer } from 'cesium'
+import DRAW_TYPE_PRESETS from './drawPresets'
 import CesiumViewer from './components/CesiumViewer.vue'
 import DrawForm from './components/DrawForm.vue'
 import EventLog from './components/EventLog.vue'
@@ -20,6 +21,7 @@ function handleViewerReady(viewer: Viewer): void {
   sk.debug = true
 
   sk.on('draw-finish', (evt) => {
+    evt.element.setStyles({ hoverStyle: DRAW_TYPE_PRESETS[evt.element.type].hoverStyle })
     log(`Draw finish: ${evt.element.type} ${evt.element.id.slice(0, 8)}...`)
     console.log('Element coords:', evt.element.coords.length)
   })
