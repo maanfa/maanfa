@@ -105,3 +105,16 @@ const sketcher = new Sketcher(viewer, {
 ```
 
 悬停样式只读取 `element.hoverStyle`；选择/编辑样式未配置实例值时才使用全局兜底。
+
+### 悬停行为
+
+默认开启自动悬停。可通过 `hoverEnabled` 开关控制，并监听 `hover-change` 获取当前元素：
+
+```typescript
+sketcher.hoverEnabled = true
+sketcher.on('hover-change', ({ id }) => {
+  console.log('当前悬停元素:', id)
+})
+```
+
+`hoverStyle` 只覆盖其中明确提供的样式分项，未提供的分项沿用基础样式。例如 polygon 的悬停样式只设置 `line` 时，`fill` 的颜色和透明度保持不变；移出元素后会自动恢复基础样式。
