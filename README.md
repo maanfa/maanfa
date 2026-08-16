@@ -4,7 +4,7 @@
 
 ## 演示
 
-<video src="docs/MaanfaIntro.webm" controls muted loop width="720"></video>
+[![Maanfa 演示视频](docs/MaanfaIntro.jpg)](https://github.com/maanfa/maanfa/blob/main/docs/MaanfaIntro.webm)
 
 ## 架构
 
