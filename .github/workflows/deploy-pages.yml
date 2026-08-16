@@ -3,6 +3,15 @@ name: Deploy dev-workshop to GitHub Pages
 on:
   push:
     branches: [main]
+    paths:
+      - apps/dev-workshop/**
+      - packages/sketcher/**
+      - packages/types/**
+      - packages/tsconfig/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - .github/workflows/deploy-pages.yml
   workflow_dispatch:
 
 permissions:
