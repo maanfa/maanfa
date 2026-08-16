@@ -2,6 +2,10 @@
 
 基于 [CesiumJS](https://cesium.com/platform/cesiumjs/) 的交互式绘图工具库，提供在三维地球上绘制点、线、多边形等几何图形的能力。
 
+## 演示
+
+<video src="https://raw.githubusercontent.com/maanfa/maanfa/main/docs/MaanfaIntro.webm" controls muted loop width="720"></video>
+
 ## 架构
 
 本项目采用 **pnpm monorepo** 结构，包含以下几个包：
