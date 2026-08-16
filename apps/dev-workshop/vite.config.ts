@@ -76,4 +76,20 @@ export default defineConfig(({ command }) => ({
   },
   // GitHub Pages 部署在 https://maanfa.github.io/maanfa/ 子路径下
   base: command === 'build' ? '/maanfa/' : '/',
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'cesium',
+              test: (id) =>
+                /node_modules[\\/](?:\.pnpm[\\/])?(?:@cesium[+\\/]|cesium[\\/])/.test(id),
+              priority: 10,
+            },
+          ],
+        },
+      },
+    },
+  },
 }))
