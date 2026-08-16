@@ -23,7 +23,7 @@ defineExpose({ viewer })
 
 onMounted(() => {
   Camera.DEFAULT_VIEW_RECTANGLE = Rectangle.fromDegrees(110, 20, 111, 21)
-  globalThis.CESIUM_BASE_URL = 'node_modules/cesium/Build/CesiumUnminified/'
+  globalThis.CESIUM_BASE_URL = `${import.meta.env.BASE_URL}cesium/`
 
   const v = new Viewer(containerRef.value as Element, {
     animation: false,
